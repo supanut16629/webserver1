@@ -1,0 +1,28 @@
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+    "email" : "email1@gmail.com",
+    "password" : "123456"
+}
+
+###
+
+POST http://localhost:5000/signup
+Content-Type: application/json
+
+{
+    "email" : "email1@gmail.com",
+    "name" : "admin1",
+    "password" : "123456",
+    "phone" : "02000000"
+}
+
+###
+
+POST http://localhost:5000/check-token
+Content-Type: application/json
+
+{
+    "token" : "c89f54030e0ec4fcad4f28d2d576371c55c67081e627856644403ec2bc5bcece5fa3e9e22be0b60d095e756970d8d71cbe1c1579bd8165c71d3cbdc07cde3ea4"
+}

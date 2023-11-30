@@ -1,0 +1,13 @@
+client
+npx create-react-app app
+npm i axios
+
+server
+npm i express cors mysql nodemon jsonwebtoken
+
+//by part Axios
+app.use((req,res,next) =>{
+    res.header("Access-Control-Allow-Origin" , '*')
+    res.header("Access-Control-Allow-Headers" , 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+})
