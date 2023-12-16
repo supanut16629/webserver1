@@ -1,0 +1,41 @@
+.container{
+    background-color: #DBE2E9;
+    height: calc(100vh - 60px);
+    width: 260px;
+}
+.header{
+    background-color: #1070C6;
+    margin: auto;
+    padding: auto;
+    height: 60px;
+}
+.body{
+    display: flex;
+}
+.top-corner{
+    padding-left: 1rem;
+    
+}
+.link{
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    font-size: 18px;
+    text-decoration: none;
+    color: #000;
+    border-bottom: 1px solid #9f9f9f;
+    padding: 0.5rem 0em 0.5rem 1em;
+}
+
+.titleName{
+    padding: 0 0 0 1em;
+}
+.link:hover{
+    color: aliceblue;
+    background-color: #1070C6;
+}
+
+
+.createRelation{
+    
+}

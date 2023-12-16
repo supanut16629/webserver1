@@ -24,5 +24,5 @@ POST http://localhost:5000/check-token
 Content-Type: application/json
 
 {
-    "token" : "c89f54030e0ec4fcad4f28d2d576371c55c67081e627856644403ec2bc5bcece5fa3e9e22be0b60d095e756970d8d71cbe1c1579bd8165c71d3cbdc07cde3ea4"
+    "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImVtYWlsMUBnbWFpbC5jb20iLCJpYXQiOjE3MDE1ODE2NTUsImV4cCI6MTcwMTU4MTY4NX0.dt_TR9tvllOJ_tvow_bdx_CHPUmQMxNnUX9J-Bu_pKU"
 }

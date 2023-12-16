@@ -1,6 +1,6 @@
 client
 npx create-react-app app
-npm i axios
+npm i axios redux
 
 server
 npm i express cors mysql nodemon jsonwebtoken
