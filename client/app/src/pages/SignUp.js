@@ -62,86 +62,85 @@ const SignUp = () => {
         isAdmin: 0,
         password,
       });
-      if(res.data.status == "ok"){
-        console.log("register success")
-        navigate("/")
-      }else{
-        console.log("register fail")
+      if (res.data.status == "ok") {
+        console.log("register success");
+        navigate("/");
+      } else {
+        console.log("register fail");
       }
-
-    } catch (err) {console.log("Error =",err)}
+    } catch (err) {
+      console.log("Error =", err);
+    }
   };
 
   return (
     <div className="pageSignIn-Up">
       <div className="SignIn-UpComponent" id="signUp">
+        <h3>สมัครบัญชี</h3>
         <form onSubmit={handleSignUp}>
-          <h3>SignUp</h3>
           <label>
-            Email:
-            <br />
+            <p>อีเมลผู้ใช้บัญชี</p>
             <input
               type="text"
               name="email"
+              placeholder="อีเมลที่ต้องการของผู้ใช้บัญชี"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
           </label>
-          <br />
           <label>
-            Firstname:
-            <br />
+            <p>ชื่อ</p>
             <input
               type="text"
               name="firstname"
+              placeholder="ชื่อ"
               value={firstname}
               onChange={(event) => setFirstname(event.target.value)}
             />
           </label>
-          <br />
           <label>
-            Surname:
-            <br />
+            <p>นามสกุล</p>
             <input
               type="text"
               name="surname"
+              placeholder="นามสกุล"
               value={surname}
               onChange={(event) => setSurname(event.target.value)}
             />
           </label>
-          <br />
+          <label className="passwordCondition">เงื่อนไขในการตั้งรหัสผ่าน จะต้องมี8-16ตัวอักษร มีตัวอักษรพิเศษ และตัวพิมพ์ใหญ่อย่างน้อยตัว</label>
           <label>
-            Password:
-            <br />
+            <p>รหัสผ่าน</p>
             <input
               type="password"
               name="password"
+              placeholder="รหัสผ่าน"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
           </label>
-          <br />
-          <label>
-            Password Again:
-            <br />
+          <label>          
+            <p>กรอกรหัสผ่านอีกครั้ง</p>
             <input
               type="password"
               name="password"
+              placeholder="กรอกรหัสผ่านอีกรอบ"
               value={password2}
               onChange={(event) => setPassword2(event.target.value)}
             />
           </label>
-          <div>
+          <div className="btn-bottom">
             <button
+            className="btn-Cancal"
               type="button"
               onClick={() => {
                 navigate("/");
               }}
             >
-              Cancel
+              <p>ยกเลิก</p>
             </button>
 
-            <button type="submit">Sign Up</button>
+            <button className="btn-SignIn" type="submit"><p>ยืนยันการสมัคร</p></button>
           </div>
         </form>
       </div>

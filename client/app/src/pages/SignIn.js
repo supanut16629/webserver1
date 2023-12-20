@@ -4,8 +4,41 @@ import axios from "axios";
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
   const navigate = useNavigate();
+
+  function resetTextInput() {
+    setEmail("");
+    setPassword("");
+  }
+
+  useEffect(() => {
+    async function autoLogIn() {
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      if (!userData) {
+        localStorage.removeItem("userData");
+        navigate("/");
+        return;
+      }
+      await axios
+        .post(
+          "http://localhost:5000/auth",
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + userData.token,
+            },
+          }
+        )
+        .then((response) => response.data)
+        .then((data) => {
+          if (data.status == "ok") {
+            navigate("/main");
+          }
+        });
+    }
+    autoLogIn();
+  }, []);
 
   const handleLogin = async () => {
     try {
@@ -17,17 +50,16 @@ const SignIn = () => {
       const { status, token, data } = response.data;
       if (status === "ok") {
         console.log(token, data);
-        setEmail("");
-        setPassword("");
-        localStorage.setItem("token", token);
+        const userData = { token, data };
+        resetTextInput();
+        localStorage.setItem("userData", JSON.stringify(userData));
         alert("Login success");
 
         //collect to redux state
         navigate("/main");
       } else {
         console.log(response);
-        setEmail("");
-        setPassword("");
+        resetTextInput();
         alert("Login Fail");
       }
     } catch (err) {
@@ -39,36 +71,37 @@ const SignIn = () => {
     <div>
       <div className="pageSignIn-Up">
         <div className="SignIn-UpComponent">
+          <h3>เข้าสู่ระบบ</h3>
           <form>
-            <h3>SignIn</h3>
             <label>
-              <h4>Email:</h4>
+              <h4>อีเมลผู้ใช้งาน</h4>
               <input
                 type="text"
                 required={true}
-                placeholder="Enter your email"
+                placeholder="อีเมลผู้ใช้บัญชี"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
               />
-              <h4>Password:</h4>
+              <h4>รหัสผ่าน</h4>
               <input
                 type="password"
                 required={true}
                 value={password}
-                placeholder="Enter your password"
+                placeholder="รหัสผ่านผู้ใช้บัญชี"
                 onChange={(event) => setPassword(event.target.value)}
               />
-              <div>
+              <div className="btn-bottom">
                 <button
+                  className="btn-SignUp"
                   type="button"
                   onClick={() => {
                     navigate("/signUp");
                   }}
                 >
-                  <p>Sign Up</p>
+                  <p>สมัครบัญชี</p>
                 </button>
-                <button type="button" onClick={() => handleLogin()}>
-                  <p>Log In</p>
+                <button className="btn-SignIn" type="button" onClick={() => handleLogin()}>
+                  <p>เข้าสู่ระบบ</p>
                 </button>
               </div>
             </label>

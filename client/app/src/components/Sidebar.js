@@ -8,9 +8,14 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { FaRegStar } from "react-icons/fa6";
 import { FaBarsProgress } from "react-icons/fa6";
 import { MdAdminPanelSettings } from "react-icons/md";
+import { MdAccountCircle } from "react-icons/md";
+import { RiLogoutBoxRFill } from "react-icons/ri";
+import { FaGear } from "react-icons/fa6";
 import "../styleCss/SideBarNHeader.css";
 function Sidebar({ children }) {
   const navigate = useNavigate();
+  const [toggleLogOut, setToggleLogOut] = useState(false);
+  const [isOpenSideBar,setIsOpenSideBar] = useState(true)
   //Ex
   const [userInfo, setUserInfo] = useState({
     name: "admin",
@@ -50,8 +55,12 @@ function Sidebar({ children }) {
     },
   ];
 
+  const toggleSideBar = ()=> setIsOpenSideBar(!isOpenSideBar)
+  function toggleBtnLogOut() {
+    return setToggleLogOut(!toggleLogOut);
+  }
   function handleLogOut() {
-    localStorage.removeItem("token");
+    localStorage.removeItem("userData");
     //delete from redux state
     navigate("/");
   }
@@ -60,7 +69,12 @@ function Sidebar({ children }) {
 
   useEffect(() => {
     async function verifyToken() {
-      const token = localStorage.getItem("token");
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      if (!userData) {
+        localStorage.removeItem("userData");
+        navigate("/");
+        return;
+      }
       await axios
         .post(
           "http://localhost:5000/auth",
@@ -68,7 +82,7 @@ function Sidebar({ children }) {
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: "Bearer " + token,
+              Authorization: "Bearer " + userData.token,
             },
           }
         )
@@ -78,7 +92,7 @@ function Sidebar({ children }) {
             console.log("auth success");
           } else {
             console.log("auth fail");
-            localStorage.removeItem("token");
+            localStorage.removeItem("userData");
             navigate("/");
           }
         })
@@ -90,21 +104,61 @@ function Sidebar({ children }) {
   return (
     <div>
       <div className="header">
-        <button type="button" onClick={() => handleLogOut()}>
-          <p>Log Out</p>
-        </button>
+        <div
+          style={{
+            display: "flex",
+            flex: 1,
+            justifyContent: "flex-start",
+            alignItems: "center",
+            paddingLeft: "1rem",
+          }}
+        >
+          <div>Username:</div>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flex: 1,
+            justifyContent: "flex-end",
+            alignItems: "center",
+            paddingRight: "1rem",
+          }}
+        >
+          <MdAccountCircle
+            className={
+              toggleLogOut === false ? "btn-toggleLogOut" : "btn-toggleLogOut2"
+            }
+            size={30}
+            onClick={() => toggleBtnLogOut()}
+          />
+          {toggleLogOut && (
+            <div className="boxDropdown">
+              <div
+                className="dropdownLogout"
+                onClick={() => console.log("Setting")}
+              >
+                <FaGear />
+                <div style={{ paddingLeft: 10 }}>ตั้งค่า</div>
+              </div>
+              <div onClick={() => handleLogOut()} className="dropdownLogout">
+                <RiLogoutBoxRFill />
+                <div style={{ paddingLeft: 10 }}>ออกจากระบบ</div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <div className="body">
-        <div className="container">
+        <div className={ isOpenSideBar ?"container": "container-narrow"}>
           <div className="top-corner">
-            <GiHamburgerMenu size={30} />
+            <GiHamburgerMenu size={20} className="hamburgerMenu" onClick={toggleSideBar}/>
           </div>
           {menuItem.map((item, index) => {
             if (item.title !== "Admin Management" || userInfo.isAdmin === 1) {
               return (
-                <NavLink to={item.path} key={index} className="link">
+                <NavLink to={item.path} key={index} className="link" title={!isOpenSideBar ? item.title : ""}>
                   <div className="icon">{item.icon}</div>
-                  <div className="titleName">{item.title}</div>
+                  { isOpenSideBar && <div className="titleName">{item.title}</div>}
                 </NavLink>
               );
             }
