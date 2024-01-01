@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import axios from "axios";
 
+//Icon
 import { GiHamburgerMenu } from "react-icons/gi";
 import * as FaIcon from "react-icons/fa";
 import * as Io5Icon from "react-icons/io5";
@@ -14,11 +15,24 @@ import { VscGitPullRequestCreate } from "react-icons/vsc";
 import { MdAccountCircle } from "react-icons/md";
 import { RiLogoutBoxRFill } from "react-icons/ri";
 import { FaGear } from "react-icons/fa6";
+import { TiGroup } from "react-icons/ti";
+import { RiAdminFill } from "react-icons/ri";
+
+import { useDispatch, useSelector } from "react-redux";
 import "../styleCss/SideBarNHeader.css";
 function SidebarAdmin({ children }) {
   const navigate = useNavigate();
   const [toggleLogOut, setToggleLogOut] = useState(false);
-  const [isOpenSideBar,setIsOpenSideBar] = useState(true)
+  const [isOpenSideBar, setIsOpenSideBar] = useState(true);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const userData = useSelector((state) => state.account[0]);
+
+  const [userInfo, setUserInfo] = useState({
+    firstname: "",
+    surname: "",
+    isAdmin: 1,
+  });
+
   const menuItem = [
     {
       path: "/admin/",
@@ -51,21 +65,42 @@ function SidebarAdmin({ children }) {
       icon: <VscGitPullRequestCreate />,
     },
     {
+      path: "/admin/role",
+      title: "Role",
+      icon: <TiGroup />,
+    },
+    {
       path: "/main/",
       title: "Switch to User",
       icon: <PiUserSwitchBold />,
     },
   ];
 
-  const toggleSideBar = ()=> setIsOpenSideBar(!isOpenSideBar)
+  const toggleSideBar = () => setIsOpenSideBar(!isOpenSideBar);
   function toggleBtnLogOut() {
     return setToggleLogOut(!toggleLogOut);
   }
 
   function handleLogOut() {
     localStorage.removeItem("userData");
+    setUserInfo({ firstname: "", surname: "", isAdmin: 1 });
     navigate("/");
   }
+
+  const handleNavLinkClick = (newPath) => {
+    setCurrentPath(newPath);
+  };
+
+  useEffect(() => {
+    async function fetchUserInfo() {
+      setUserInfo({
+        firstname: userData.firstname,
+        surname: userData.surname,
+        isAdmin: userData.isAdmin,
+      });
+    }
+    fetchUserInfo();
+  }, []);
 
   useEffect(() => {
     async function verifyToken() {
@@ -73,6 +108,10 @@ function SidebarAdmin({ children }) {
       if (!userData) {
         localStorage.removeItem("userData");
         navigate("/");
+        return;
+      }
+      if (userData.data[0].isAdmin !== 1) {
+        navigate("/main");
         return;
       }
       await axios
@@ -100,9 +139,13 @@ function SidebarAdmin({ children }) {
     }
     verifyToken();
   }, []);
+
+  useEffect(() => {
+    setCurrentPath(window.location.pathname);
+  }, []);
   return (
     <div>
-      <div className="header">
+      <div className="headerAdmin">
         <div
           style={{
             display: "flex",
@@ -112,7 +155,11 @@ function SidebarAdmin({ children }) {
             paddingLeft: "1rem",
           }}
         >
-          <div>Username:</div>
+          <RiAdminFill className="logoAdmin" />
+          <div className="textAdmin">Administrator</div>
+          <div>
+            ชื่อผู้ใช้ : {userInfo.firstname} {userInfo.surname}
+          </div>
         </div>
         <div
           style={{
@@ -148,22 +195,38 @@ function SidebarAdmin({ children }) {
         </div>
       </div>
       <div className="body">
-        <div className={ isOpenSideBar ?"container": "container-narrow"}>
+        <div className={isOpenSideBar ? "container" : "container-narrow"}>
           <div className="top-corner">
-          <GiHamburgerMenu size={20} className="hamburgerMenu" onClick={toggleSideBar}/>
+            <GiHamburgerMenu
+              size={20}
+              className="hamburgerMenu"
+              onClick={toggleSideBar}
+            />
           </div>
 
           {menuItem.map((item, index) => {
+            const colorItemSelected = "#4F66AA";
             return (
-              <NavLink to={item.path} key={index} className="link" title={item.title}>
+              <NavLink
+                to={item.path}
+                key={index}
+                className="linkAdmin"
+                title={item.title}
+                style={{
+                  backgroundColor:
+                    item.path === currentPath ? colorItemSelected : "#DBE2E9",
+                }}
+                onClick={() => handleNavLinkClick(item.path)}
+              >
                 <div className="icon">{item.icon}</div>
-                { isOpenSideBar && <div className="titleName">{item.title}</div>}
+                {isOpenSideBar && <div className="titleName">{item.title}</div>}
               </NavLink>
             );
           })}
         </div>
-
-        <main>{children}</main>
+        <main>
+          {children}
+        </main>
       </div>
     </div>
   );

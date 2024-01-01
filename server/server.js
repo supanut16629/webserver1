@@ -133,6 +133,38 @@ app.post("/checkEmailRepeat", (req, res) => {
     }
   });
 });
+
+app.get("/api/fetchRoles",(req,res) =>{
+  const queryString = 'SELECT * FROM roles';
+  connection.query(queryString,(error, results)=>{
+    res.json({ results });
+  })
+})
+
+
+
+app.post("/api/addUsertoRole",(req, res) => {
+  //array
+  const { usersInRole } = req.body;
+
+  if (!Array.isArray(usersInRole)) {
+    return res.status(400).json({ error: `Invalid data format ${usersInRole}` });
+  }
+  
+  const existingEmailsQuery = 'SELECT * FROM users';
+  const existingEmailsValues = usersInRole.map(user => user.email);
+  connection.query(existingEmailsQuery,(error, results) =>{
+    if (error) {
+      console.error('Error querying MySQL:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+    const results2 = results.filter(element => !existingEmailsValues.includes(element.email))
+    
+    res.json({ results2 });
+  })
+})
+
+
 //test method
 app.get("/", (req, res) => {
   res.send("Data from Backend server");

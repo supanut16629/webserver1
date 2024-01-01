@@ -1,15 +1,46 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
+//redux
+import { useDispatch, useSelector } from "react-redux";
+import { logIn } from "../redux/slice/accountSlice";
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   function resetTextInput() {
     setEmail("");
     setPassword("");
   }
+
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/login", {
+        email: email,
+        password: password,
+      });
+
+      const { status, token, data } = response.data;
+      if (status === "ok") {
+        // console.log(token, data);
+        const userData = { token, data };
+        resetTextInput();
+        localStorage.setItem("userData", JSON.stringify(userData));
+        alert("เข้าสู่ระบบสำเร็จ");
+        //collect to redux state
+        dispatch(logIn(data))
+        navigate("/main");
+      } else {
+        resetTextInput();
+        alert("Login Fail");
+      }
+    } catch (err) {
+      console.error("Login failed:", err.response.data.message);
+    }
+  };
 
   useEffect(() => {
     async function autoLogIn() {
@@ -33,40 +64,13 @@ const SignIn = () => {
         .then((response) => response.data)
         .then((data) => {
           if (data.status == "ok") {
+            dispatch(logIn(data))
             navigate("/main");
           }
         });
     }
     autoLogIn();
   }, []);
-
-  const handleLogin = async () => {
-    try {
-      const response = await axios.post("http://localhost:5000/login", {
-        email: email,
-        password: password,
-      });
-
-      const { status, token, data } = response.data;
-      if (status === "ok") {
-        console.log(token, data);
-        const userData = { token, data };
-        resetTextInput();
-        localStorage.setItem("userData", JSON.stringify(userData));
-        alert("Login success");
-
-        //collect to redux state
-        navigate("/main");
-      } else {
-        console.log(response);
-        resetTextInput();
-        alert("Login Fail");
-      }
-    } catch (err) {
-      console.error("Login failed:", err.response.data.message);
-    }
-  };
-
   return (
     <div>
       <div className="pageSignIn-Up">
@@ -100,7 +104,11 @@ const SignIn = () => {
                 >
                   <p>สมัครบัญชี</p>
                 </button>
-                <button className="btn-SignIn" type="button" onClick={() => handleLogin()}>
+                <button
+                  className="btn-SignIn"
+                  type="button"
+                  onClick={() => handleLogin()}
+                >
                   <p>เข้าสู่ระบบ</p>
                 </button>
               </div>
