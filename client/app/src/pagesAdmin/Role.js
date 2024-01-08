@@ -1,442 +1,556 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { FaPlus } from "react-icons/fa6";
 import axios from "axios";
-
-import PropTypes from "prop-types";
-import {
-  Box,
-  TableHead,
-  TableRow,
-  TableCell,
-  Checkbox,
-  TableSortLabel,
-  Toolbar,
-  Typography,
-  Tooltip,
-  IconButton,
-  Paper,
-  TableContainer,
-  Table,
-  TableBody,
-  TablePagination,
-} from "@mui/material";
-
-import { alpha } from "@mui/system";
-import { visuallyHidden } from "@mui/utils";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import "../styleCss/RoleStyle.css";
-
-function createData(id, firstname, surname, email, status) {
-  return {
-    id,
-    firstname,
-    surname,
-    email,
-    status,
-  };
-}
-
-const rows = [
-  // createData(1, "test1", "surname1", "Email1", "user"),
-  // createData(2, "test2", "surname2", "Email2", "admin"),
-  // createData(3, "test3", "surname3", "Email3", "user"),
-  // createData(4, "test4", "surname4", "Email4", "admin"),
-  // createData(5, "test5", "surname5", "Email5", "user"),
-  // createData(6, "test6", "surname6", "Email6", "admin"),
-];
-
-function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
-function getComparator(order, orderBy) {
-  return order === "desc"
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
-function stableSort(array, comparator) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) {
-      return order;
-    }
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
-}
-
-const headCells = [
-  {
-    id: "firstname",
-    numeric: false,
-    disablePadding: true,
-    label: "ชื่อ",
-  },
-  {
-    id: "Surname",
-    numeric: false,
-    disablePadding: true,
-    label: "นามสกุล",
-  },
-  {
-    id: "email",
-    numeric: false,
-    disablePadding: true,
-    label: "Email",
-  },
-  {
-    id: "status",
-    numeric: true,
-    disablePadding: true,
-    label: "สถานะ",
-  },
-];
-function EnhancedTableHead(props) {
-  const {
-    onSelectAllClick,
-    order,
-    orderBy,
-    numSelected,
-    rowCount,
-    onRequestSort,
-  } = props;
-  const createSortHandler = (property) => (event) => {
-    onRequestSort(event, property);
-  };
-
-  return (
-    <TableHead>
-      <TableRow>
-        <TableCell padding="checkbox">
-          <Checkbox
-            color="primary"
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={onSelectAllClick}
-            inputProps={{
-              "aria-label": "select all desserts",
-            }}
-          />
-        </TableCell>
-        {headCells.map((headCell) => (
-          <TableCell
-            key={headCell.id}
-            align="center"
-            padding={headCell.disablePadding ? "none" : "normal"}
-            sortDirection={orderBy === headCell.id ? order : false}
-          >
-            <TableSortLabel
-              active={orderBy === headCell.id}
-              direction={orderBy === headCell.id ? order : "asc"}
-              onClick={createSortHandler(headCell.id)}
-            >
-              {headCell.label}
-              {orderBy === headCell.id ? (
-                <Box component="span" sx={visuallyHidden}>
-                  {order === "desc" ? "sorted descending" : "sorted ascending"}
-                </Box>
-              ) : null}
-            </TableSortLabel>
-          </TableCell>
-        ))}
-      </TableRow>
-    </TableHead>
-  );
-}
-
-EnhancedTableHead.propTypes = {
-  numSelected: PropTypes.number.isRequired,
-  onRequestSort: PropTypes.func.isRequired,
-  onSelectAllClick: PropTypes.func.isRequired,
-  order: PropTypes.oneOf(["asc", "desc"]).isRequired,
-  orderBy: PropTypes.string.isRequired,
-  rowCount: PropTypes.number.isRequired,
-};
-function EnhancedTableToolbar(props) {
-  const { numSelected } = props;
-
-  return (
-    <Toolbar
-      sx={{
-        pl: { sm: 2 },
-        pr: { xs: 1, sm: 1 },
-        ...(numSelected > 0 && {
-          bgcolor: (theme) =>
-            alpha(
-              theme.palette.primary.main,
-              theme.palette.action.activatedOpacity
-            ),
-        }),
-      }}
-    >
-      {numSelected > 0 ? (
-        <Typography
-          sx={{ flex: "1 1 100%" }}
-          color="inherit"
-          variant="subtitle1"
-          component="div"
-        >
-          เลือกแล้ว {numSelected}
-        </Typography>
-      ) : (
-        <Typography
-          sx={{ flex: "1 1 100%" }}
-          variant="h6"
-          id="tableTitle"
-          component="div"
-        ></Typography>
-      )}
-
-      {numSelected > 0 ? (
-        <Tooltip title="Delete">
-          <IconButton>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      ) : (
-        <Tooltip title="Filter list">
-          <IconButton>
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Toolbar>
-  );
-}
-
-EnhancedTableToolbar.propTypes = {
-  numSelected: PropTypes.number.isRequired,
-};
-
+import DeleteIcon from "@mui/icons-material/Delete";
+import { IoAlertCircleOutline } from "react-icons/io5";
 //component
+import SelectionAddUsers from "../components/SelectionAddUsers";
+import TablePersonInRole from "../components/TablePersonInRole";
 
-const WindowAddUser = ({ isAddUserOpen }) => {
-  return <>{isAddUserOpen && <div className="window-overlay"></div>}</>;
+const WindowAddUserToRole = ({
+  listUsers,
+  onClickAddUser,
+  personToAdd,
+  setPersonToAdd,
+}) => {
+  return (
+    <div className="window-overlay">
+      <div className="window-add-users-to-role">
+        <SelectionAddUsers
+          listUsers={listUsers}
+          personToAdd={personToAdd}
+          setPersonToAdd={setPersonToAdd}
+        />
+        <div
+          style={{
+            display: "flex",
+            width: "500px",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button onClick={() => onClickAddUser()}>ตกลง</button>
+        </div>
+      </div>
+    </div>
+  );
 };
+
+/////////////////////////////////////////////////////////////////////////
+const TabDelete = ({ onClose, selected,handleDelPersonInRole }) => {
+  return (
+    <div className="window-overlay">
+      <div className="tab-del">
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            flexDirection: "column",
+            margin: "0.5rem",
+            justifyContent: "flex-start",
+            alignItems: "center",
+          }}
+        >
+          <IoAlertCircleOutline size={100} style={{ padding: 0 }} />
+          <h2 style={{ padding: 0, margin: 0 }}>ลบรายการที่เลือกหรือไม่?</h2>
+          <p style={{ padding: 0, margin: 0 }}>
+            เมื่อลบแล้วรายการที่เลือกจะถูกนำออกทันที
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-around",
+          }}
+        >
+          <button className="btn-cancel-del-user" onClick={() => onClose()}>
+            ยกเลิก
+          </button>
+          <button
+            className="btn-confirm-del-user"
+            onClick={() => handleDelPersonInRole()}
+          >
+            ตกลง
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/////////////////////////////////////////////////////////////////////////
 const WindowRole = ({
-  isOpen,
-  isAddUserOpen,
   onClose,
   handleconfirmRole,
   role,
   setRole,
-  selected,
-  order,
-  orderBy,
-  handleSelectAllClick,
-  handleRequestSort,
-  visibleRows,
-  isSelected,
-  handleClick,
-  emptyRows,
-  rowsPerPage,
-  page,
-  handleChangePage,
-  handleChangeRowsPerPage,
+  role_Name,
+  setRole_Name,
+  person,
+  setPerson,
+  handleFetchUserInRole,
 }) => {
+  const [isOpenSubWindow, setIsOpenSubWindow] = useState(false);
+  const [listPersonWithOutRole, setListPersonWithOutRole] = useState([]); // [{user},{user}]
+  const [personToAdd, setPersonToAdd] = useState([]);
+
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+
+  const [isOpenTabDelete, setIsOpenTabDelete] = useState(false);
+
+
+  async function handleManageWindowAdduser(usersInRole) {
+    const listUserInRoleID = usersInRole.map((item, index) => item._id);
+    console.log(listUserInRoleID);
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    await axios
+      .post(
+        "http://localhost:5000/api/fetchUserWithOutRole",
+        {
+          listUserInRoleID,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userData.token,
+          },
+        }
+      )
+      .then((res) => res.data)
+      .then((data) => {
+        // console.log(data.users)
+        setListPersonWithOutRole(data.users);
+      });
+    setIsOpenSubWindow(true);
+  }
+
+  const openTabDelete = () => {
+    if (person.length === selectedItems.length) {
+      alert("ไม่สามารถลบรายการทั้งหมดได้");
+      setIsOpenTabDelete(false);
+      return;
+    }
+    setIsOpenTabDelete(true);
+  };
+
+  const onCloseTabDelete = () => {
+    setIsOpenTabDelete(false);
+  };
+
+  function handleAddUserToRole() {
+    setIsOpenSubWindow(false);
+  }
+
+  const handleDelPersonInRole = async () => {
+    // console.log("list uesr_id ที่ต้องหาในการลบ", selected);
+    // console.log("role_id ที่ต้องหาในการลบ", role._id);
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/delUserFromRoleUpdate",
+        {
+          listIdToDel: selectedItems,
+          role_ID: role._id,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userData.token,
+          },
+        }
+      );
+      //ยังไม่เสร็จ เหลือ fetch user ที่มาล่าสุดใหม่
+      //call api by axios POST
+      await axios
+        .post(
+          "http://localhost:5000/api/fetchPersonFromRole",
+          {
+            role_ID: role._id,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + userData.token,
+            },
+          }
+        )
+        .then((response) => response.data)
+        .then((data) => {
+          console.log("setPerson =", data.users);
+          setPerson(data.users);
+        });
+      //set ให้หน้าต่างปิด
+      onCloseTabDelete();
+    } catch (error) {}
+  };
+
+
+  const handleCheckboxChange = (itemId) => {
+    if (selectAll) {
+      // If "Select All" is checked, uncheck it and clear selected items
+      setSelectAll(false);
+      setSelectedItems(selectedItems.filter((id) => id !== itemId));
+    } else {
+      // Otherwise, toggle the selected status of the clicked item
+      const updatedSelectedItems = [...selectedItems];
+
+      if (updatedSelectedItems.includes(itemId)) {
+        updatedSelectedItems.splice(updatedSelectedItems.indexOf(itemId), 1);
+      } else {
+        updatedSelectedItems.push(itemId);
+      }
+
+      setSelectedItems(updatedSelectedItems);
+    }
+  };
+  const handleSelectAllChange = () => {
+    // Toggle the "Select All" status and clear or populate the selected items accordingly
+    setSelectAll(!selectAll);
+    setSelectedItems(selectAll ? [] : person.map((item) => item._id));
+  };
+
+  const handleDelData = () => {
+    console.log(selectedItems)
+  };
   return (
     <>
-      {isOpen && (
-        <div className="window-overlay">
-          <div className="window-add-role">
+      <div className="window-overlay">
+        <div className="window-add-role">
+          <u>
             <h2>ชื่อ Role</h2>
-            <input
-              className="textInput-role"
-              type="text"
-              required={true}
-              placeholder="ชื่อ Role ที่ต้องการ"
-              value={role}
-              onChange={(event) => setRole(event.target.value)}
-            ></input>
+          </u>
+          <input
+            className="textInput-role"
+            type="text"
+            placeholder="ชื่อ Role ที่ต้องการ"
+            value={role_Name}
+            onChange={(event) => setRole_Name(event.target.value)}
+          ></input>
 
-            <h2>รายชื่อทั้งหมด</h2>
-            {/*  */}
-            <Paper sx={{ width: "100%", mb: 1 }}>
-              <EnhancedTableToolbar numSelected={selected.length} />
-              <TableContainer>
-                <Table
-                  sx={{ minWidth: 500 }}
-                  aria-labelledby="tableTitle"
-                  size="small"
+          <u>
+            <h2>{person.length > 0 ? "รายชื่อทั้งหมด" : "ยังไม่มีรายชื่อ"}</h2>
+          </u>
+          <div className="frame-display-user-in-role">
+            {person.length > 0 && (
+              <div className="group-header">
+                <div
+                  style={{ flex: 1, justifyContent: "center", display: "flex" }}
                 >
-                  <EnhancedTableHead
-                    numSelected={selected.length}
-                    order={order}
-                    orderBy={orderBy}
-                    onSelectAllClick={handleSelectAllClick}
-                    onRequestSort={handleRequestSort}
-                    rowCount={rows.length}
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAllChange}
                   />
-                  <TableBody>
-                    {visibleRows.map((row, index) => {
-                      const isItemSelected = isSelected(row.id);
-                      const labelId = `enhanced-table-checkbox-${index}`;
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    borderRight: "1px solid",
+                    justifyContent: "center",
+                    display: "flex",
+                  }}
+                >
+                  ชื่อ
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    borderRight: "1px solid",
+                    justifyContent: "center",
+                    display: "flex",
+                  }}
+                >
+                  นามสกุล
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    borderRight: "1px solid",
+                    justifyContent: "center",
+                    display: "flex",
+                  }}
+                >
+                  อีเมล
+                </div>
+                <div
+                  style={{ flex: 1, justifyContent: "center", display: "flex" }}
+                >
+                  สถานะ
+                </div>
+              </div>
+            )}
+            {person.map((item, index) => {
+              // console.log(item)
+              return (
+                <div key={index}>
+                  <div className="group-person-in-role">
+                    <input
+                      style={{
+                        flex: 1,
+                        justifyContent: "center",
+                        display: "flex",
+                      }}
+                      type="checkbox"
+                      checked={selectedItems.includes(item._id)}
+                      onChange={() => handleCheckboxChange(item._id)}
+                    />
+                    <div style={{ flex: 1 }}>{item.firstname}</div>
+                    <div style={{ flex: 1 }}>{item.surname}</div>
+                    <div style={{ flex: 1 }}>{item.email}</div>
+                    <div style={{ flex: 1 }}>
+                      {item.isAdmin === 1 ? "Admin" : "User"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {/* <TablePersonInRole listPerson={person} role={role} setPerson={setPerson} handleFetchUserInRole={handleFetchUserInRole} /> */}
+          </div>
+          <div className="frame-btn-del">
+            {selectedItems.length !== 0 && (
+              <button className="btn-del" onClick={()=>openTabDelete()}>
+                <DeleteIcon />
+                <p>ลบรายการ</p>
+              </button>
+            )}
+          </div>
+          <div className="add-user-frame">
+            <div>
+              {personToAdd.length > 0 && (
+                <u>
+                  <h2>รายชื่อที่ต้องการเพิ่ม</h2>
+                </u>
+              )}
+            </div>
+            {listPersonWithOutRole.map((item, index) => {
+              if (personToAdd.includes(item._id)) {
+                return (
+                  <div key={index} className="display-user-to-add">
+                    <div style={{ flex: 2 }}>
+                      ชื่อ : {item.firstname} {item.surname}
+                    </div>
+                    <div style={{ flex: 1 }}>Email : {item.email}</div>
+                    <div
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {item.isAdmin === 1 ? "Admin" : "User"}
+                    </div>
+                  </div>
+                );
+              }
+            })}
+          </div>
 
-                      return (
-                        <TableRow
-                          hover
-                          onClick={(event) => handleClick(event, row.id)}
-                          role="checkbox"
-                          aria-checked={isItemSelected}
-                          tabIndex={-1}
-                          key={row.id}
-                          selected={isItemSelected}
-                          sx={{ cursor: "pointer" }}
-                        >
-                          <TableCell padding="checkbox">
-                            <Checkbox
-                              color="primary"
-                              checked={isItemSelected}
-                              inputProps={{
-                                "aria-labelledby": labelId,
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell
-                            component="th"
-                            id={labelId}
-                            scope="row"
-                            padding="none"
-                          >
-                            {row.firstname}
-                          </TableCell>
-                          <TableCell align="left">{row.surname}</TableCell>
-                          <TableCell align="left">{row.email}</TableCell>
-                          <TableCell align="right">{row.status}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {emptyRows > 0 && (
-                      <TableRow
-                        style={{
-                          height: 33 * emptyRows,
-                        }}
-                      >
-                        <TableCell colSpan={6} />
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <TablePagination
-                rowsPerPageOptions={[5]}
-                component="div"
-                count={rows.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-              />
-            </Paper>
-
-            <button className="btn-add-name">+ เพิ่ม</button>
-            <WindowAddUser isAddUserOpen={isAddUserOpen} />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              width: "700px",
+              borderTop: "0.5px solid",
+              paddingTop: "0.5rem",
+            }}
+          >
+            <button
+              className="btn-add-name"
+              onClick={() => handleManageWindowAdduser(person)}
+            >
+              + เพิ่มรายชื่อ
+            </button>
             <div className="box-btn-in-window">
               <button className="close-button" onClick={onClose}>
                 ยกเลิก
               </button>
-              <button className="confirm-button" onClick={handleconfirmRole}>
+              <button
+                className="confirm-button"
+                onClick={() => handleconfirmRole(personToAdd)}
+              >
                 ยืนยัน
               </button>
             </div>
           </div>
         </div>
+        {isOpenSubWindow && (
+          <WindowAddUserToRole
+            listUsers={listPersonWithOutRole}
+            onClickAddUser={handleAddUserToRole}
+            personToAdd={personToAdd}
+            setPersonToAdd={setPersonToAdd}
+          />
+        )}
+        {isOpenTabDelete && (
+        <TabDelete
+          onClose={onCloseTabDelete}
+          selected={selectedItems}
+          handleDelPersonInRole={handleDelPersonInRole}
+        />
       )}
+      </div>
     </>
   );
 };
 
 ////////
 function Role() {
-  const [order, setOrder] = useState("asc");
-  const [orderBy, setOrderBy] = useState("calories");
-  const [selected, setSelected] = useState([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [isWindowRoleOpen, setIsWindowRoleOpen] = useState(false);
-  const [isWindowAddUserOpen, setIsWindowAddUserOpen] = useState(false);
-  const [role, setRole] = useState(""); //new role
+  const [role, setRole] = useState(); //role
+  const [role_Name, setRole_Name] = useState("");
+  const [person, setPerson] = useState([]); //คนในroleนั้นๆ
+  const [allRole, setAllRole] = useState([]); //ไว้รับข้อมูลที่ fetchมา
 
-  const [allRole, setAllRole] = useState([]);
+  //function
+  async function handleFetchUserInRole(role_ID) {
+    console.log("come on", role_ID);
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    //call api by axios POST
+    await axios
+      .post(
+        "http://localhost:5000/api/fetchPersonFromRole",
+        {
+          role_ID: role_ID,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userData.token,
+          },
+        }
+      )
+      .then((response) => response.data)
+      .then((data) => {
+        console.log("setPerson =", data.users);
+        setPerson(data.users);
+      });
+  }
 
-  const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
-
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      const newSelected = rows.map((n) => n.id);
-      setSelected(newSelected);
-      return;
+  async function openWindow(item) {
+    if (item) {
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      //call api by axios POST
+      await axios
+        .post(
+          "http://localhost:5000/api/fetchPersonFromRole",
+          {
+            role_ID: item._id,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + userData.token,
+            },
+          }
+        )
+        .then((response) => response.data)
+        .then((data) => {
+          console.log("setPerson =", data.users);
+          setPerson(data.users);
+        });
+      // handleFetchUserInRole(item._id)
     }
-    setSelected([]);
-  };
-
-  const handleClick = (event, id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
-    }
-    setSelected(newSelected);
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const isSelected = (id) => selected.indexOf(id) !== -1;
-
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
-
-  const visibleRows = useMemo(
-    () =>
-      stableSort(rows, getComparator(order, orderBy)).slice(
-        page * rowsPerPage,
-        page * rowsPerPage + rowsPerPage
-      ),
-    [order, orderBy, page, rowsPerPage]
-  );
-
-  function openWindow() {
+    setRole(item);
+    setRole_Name(item.role_Name);
     setIsWindowRoleOpen(true);
   }
 
-  function closeWindow() {
+  async function closeWindow() {
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    try{
+    const response = await axios.get("http://localhost:5000/api/fetchRoles", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + userData.token,
+        },
+      });
+      const data = response.data.results;
+      setAllRole(data);
+    } catch (error) {
+      console.log("closeWindow", error);
+    }
     setIsWindowRoleOpen(false);
-    setRole("");
+
   }
 
-  function handleconfirmRole() {
-    console.log("ชื่อRole :", role);
+  //ตอนกดตกลง ยังไม่เสร็จ
+  async function handleconfirmRole(personToAdd) {
+    console.log("ID =", role._id);
+    console.log("Role", role);
+    console.log("ชื่อRole :", role_Name);
+    console.log("personToAdd :", personToAdd);
+
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    try {
+      //
+      if (!role_Name?.trim()) {
+        alert("กรุณาใส่ชื่อ Role");
+        return;
+      }
+      //case มีroleอยู่แล้ว updateข้อมูล
+      if (role?._id) {
+        console.log("go to api");
+        await axios.put(
+          `http://localhost:5000/api/updateRole/${role._id}`,
+          {
+            role_Name: role_Name,
+            personToAdd: personToAdd,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + userData.token,
+            },
+          }
+        );
+      }
+      // สร้าง role ใหม่ต้องมี Personsก่อน
+      else {
+        console.log("ต้องสร้างRoleใหม่");
+        if (personToAdd.length === 0) {
+          alert(
+            "ไม่สามารถสร้างRole ได้เนื่องจากไม่มีการเพิ่มรายชื่อ \nคุณสามารถกดเพิ่มรายชื่อที่มุมซ้ายล่างได้"
+          );
+          return;
+        }
+        //เรียก Api
+        await axios
+          .post(
+            `http://localhost:5000/api/createRoleAndInsertPerson`,
+            {
+              role_Name: role_Name,
+              personToAdd: personToAdd,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + userData.token,
+              },
+            }
+          )
+          .then((res) => res.data)
+          .then((data) => {
+            console.log(data);
+          });
+      }
+
+      //หลัง create หรือ update ข้อมูลเสร็จ
+      const response = await axios.get("http://localhost:5000/api/fetchRoles", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + userData.token,
+        },
+      });
+      const data = response.data.results;
+      setAllRole(data);
+    } catch (error) {
+      console.log("handleconfirmRoleERROR", error);
+    }
+
+    setIsWindowRoleOpen(false);
   }
 
   function isEqual(a, b) {
@@ -445,9 +559,16 @@ function Role() {
 
   useEffect(() => {
     async function fetchRole() {
+      const userData = JSON.parse(localStorage.getItem("userData"));
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/fetchRoles"
+          "http://localhost:5000/api/fetchRoles",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + userData.token,
+            },
+          }
         );
         const data = response.data.results;
 
@@ -456,13 +577,18 @@ function Role() {
           // Update state only if the data is different
           setAllRole(data);
         }
-        console.log(allRole)
+        console.log("allRole", allRole);
       } catch (error) {
         console.error("Error fetching roles:", error);
       }
     }
     fetchRole();
   }, [allRole]);
+
+  useEffect(() => {
+    console.log("person", person);
+  }, [person]);
+
   return (
     <div>
       <div
@@ -474,43 +600,36 @@ function Role() {
           <p> เพิ่มRoleใหม่</p>
         </button>
         <h3>รายการของRole</h3>
+
+        <div style={{ width: "calc(100vw - 260px)" }}>
+          {allRole.map((item, index) => {
+            return (
+              <div key={index}>
+                <div className="role-box">
+                  <p>Role: {item.role_Name}</p>
+                  <p>จำนวน {item.number_Of_People} คน</p>
+                  <div className="btn-edit">
+                    <button onClick={() => openWindow(item)}>Edit</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {isWindowRoleOpen && (
         <WindowRole
-          isOpen={isWindowRoleOpen}
-          isAddUserOpen={isWindowAddUserOpen}
           onClose={closeWindow}
           handleconfirmRole={handleconfirmRole}
           role={role}
           setRole={setRole}
-          selected={selected}
-          order={order}
-          orderBy={orderBy}
-          handleSelectAllClick={handleSelectAllClick}
-          handleRequestSort={handleRequestSort}
-          visibleRows={visibleRows}
-          isSelected={isSelected}
-          handleClick={handleClick}
-          emptyRows={emptyRows}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          handleChangePage={handleChangePage}
-          handleChangeRowsPerPage={handleChangeRowsPerPage}
+          role_Name={role_Name}
+          setRole_Name={setRole_Name}
+          person={person}
+          setPerson={setPerson}
+          handleFetchUserInRole={handleFetchUserInRole}
         />
-        <div style={{ width: "calc(100vw - 260px)" }}>
-          {allRole.map((item,index)=>{
-            
-            console.log("item",item)
-            return(
-              <div key={index} >
-                  <div className="role-box">
-                    <p>Role: {item.role_Name}</p>
-                    <p>จำนวน {item.number_Of_people} คน</p>
-                    <a>Edit</a>
-                  </div>
-                </div>
-            )
-          })}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

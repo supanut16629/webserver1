@@ -1,8 +1,11 @@
 import React from 'react'
+import "../styleCss/RelationshipStyle.css"
 
 function CreateRelationship() {
   return (
-    <div>CreateRelationship</div>
+    <div>
+      <div></div>
+    </div>
   )
 }
 

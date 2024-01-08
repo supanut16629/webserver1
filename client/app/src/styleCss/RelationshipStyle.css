@@ -1,0 +1,41 @@
+.container-rela-window{
+    display:flex;
+    /* background-color: #0000ED; */
+    width: calc(100vw - 260px);
+    height: calc(100vh - 60px);
+    flex-direction: column;
+}
+.frame-btn-create-rela{
+    border-bottom: 1px solid;
+    display:flex;
+    justify-content: center;
+    /* height: 100px; */
+    padding: 1em 0 1em 0;
+    width: calc(100vw - 260px);
+}
+.frame-btn-create-rela button{
+    display:flex;
+    font-size: 20px;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(to top, #22ABDE, #1E11C0);
+    color: #FFFFFF;
+    border: 0;
+    border-radius: 5px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.2);
+}
+
+.frame-btn-create-rela button p{
+    margin: 0 0 0 1rem;
+}
+
+.frame-btn-create-rela button:hover {
+    background: linear-gradient(to top, #1E11C0, #22ABDE);
+    color: #FFFFFF;
+    transform: translateY(-2px); /* Optional: Add a slight upward shift on hover */
+}
+
+.frame-btn-create-rela button:active {
+    background: linear-gradient(to top, #1E11C0, #22ABDE);
+    color: #FFFFFF;
+    transform: translateY(1px); /* Optional: Add a slight downward shift on click */
+}

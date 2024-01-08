@@ -1,8 +1,8 @@
 const dotenv = require("dotenv");
 dotenv.config();
 const express = require("express");
+const mongoose = require("mongoose");
 const app = express();
-const mysql = require("mysql");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -10,6 +10,40 @@ const saltRounds = 10;
 
 const port = 5000;
 
+const uri = `mongodb+srv://krit:1234@cluster0.xssmf8n.mongodb.net/document_flow`;
+//connect mongoDB
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const db = mongoose.connection;
+db.on("connected", () => {
+  console.log("Connected to MongoDB");
+});
+//end connect mongoDB
+
+//collection users
+const userSchema = new mongoose.Schema({
+  firstname: String,
+  surname: String,
+  email: String,
+  password: String,
+  isAdmin: Number,
+});
+const UserModel = mongoose.model("users", userSchema);
+
+//collection roles
+const roleSchema = new mongoose.Schema({
+  role_Name: String,
+  number_Of_People: Number,
+});
+const RoleModel = mongoose.model("roles", roleSchema);
+
+//collection Person in role
+const personInRoleSchema = new mongoose.Schema({
+  role_ID: String,
+  user_ID: String,
+});
+const PersonInRoleModel = mongoose.model("person_in_roles", personInRoleSchema);
+
+//////
 app.use(cors());
 app.use(express.json());
 //by part Axios
@@ -22,47 +56,24 @@ app.use((req, res, next) => {
   next();
 });
 
-//connection MySQL database
-const connection = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "document_flow",
-  port: "3307",
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.log("Error connecting to MySQL datebase =", err);
-    return;
-  }
-  console.log("MySQL successfully connected!");
-});
-
 app.post("/signup", async (req, res) => {
   const { firstname, surname, email, isAdmin, password } = req.body;
-  const sqlQuery =
-    "INSERT INTO users(firstname,surname,email,isAdmin,password) VALUES(?,?,?,?,?)";
 
   try {
-    bcrypt.hash(password, saltRounds, function (err, hash) {
-      connection.query(
-        sqlQuery,
-        [firstname, surname, email, isAdmin, hash],
-        (err, result, fields) => {
-          if (err) {
-            console.error(
-              "Error while inserting a user into the database (err status 401):",
-              err
-            );
-            return res.json({ status: "error" });
-          }
-          return res.json({
-            status: "ok",
-            message: "New user Successfully created!",
-          });
-        }
-      );
+    bcrypt.hash(password, saltRounds, async function (err, hash) {
+      ///
+      const newUser = new UserModel({
+        firstname: firstname,
+        surname: surname,
+        email: email,
+        password: hash,
+        isAdmin: isAdmin,
+      });
+      await newUser.save();
+      return res.json({
+        status: "ok",
+        message: "New user Successfully created!",
+      });
     });
   } catch (err) {
     console.error("Error = ", err);
@@ -70,37 +81,61 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.post("/login", (req, res) => {
-  //Authenticate User
-  const { email, password } = req.body;
-  const sqlQuery = "SELECT * FROM users WHERE email = ?";
-
-  connection.query(sqlQuery, [email], (err, data, fields) => {
-    if (err) {
-      res.json({ status: "error", message: err });
-      return;
+app.post("/login", async (req, res) => {
+  try {
+    //Authenticate User
+    const { email, password } = req.body;
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      // No user found with the specified email
+      return res.json({
+        status: "error",
+        message: "no user found (status 401)",
+      });
     }
-    if (data.length == 0) {
-      res.json({ status: "error", message: "no user found (status 401)" });
-      return;
-    }
-    bcrypt.compare(password, data[0].password, function (err, result) {
+    bcrypt.compare(password, user.password, function (err, result) {
       if (result) {
-        const emailLocal = data[0].email;
+        // Passwords match, generate and return a JWT token
         const token = jwt.sign(
-          { email: emailLocal },
+          { email: user.email },
           process.env.ACCESS_TOKEN_SECRET,
           { expiresIn: 3600 }
         );
-        return res.json({ status: "ok", token, data });
+        console.log("User from Backend", user);
+        return res.json({ status: "ok", token, data: user });
       } else {
+        // Passwords do not match
         res.json({ status: "error", message: "no user found (status 401)" });
-        return;
       }
     });
-  });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ status: "error", message: "Internal Server Error" });
+  }
 });
 
+// Middleware to verify JWT
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) {
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    // console.log(decoded)
+    // return res.json(decoded)
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token." });
+  }
+};
+
+// API Middleware to verify JWT
 app.post("/auth", function (req, res, next) {
   const authHeader = req.headers["authorization"];
   /*split because authHeader = Bearer {token}
@@ -111,69 +146,224 @@ app.post("/auth", function (req, res, next) {
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
     if (err) return res.json({ status: "error", message: err });
     //data = email ,iat,exp
+    /////////////////////////////////////////////////////////////////////////////////
     res.json({ status: "ok", data });
   });
 });
 
-app.post("/checkEmailRepeat", (req, res) => {
+app.post("/checkEmailRepeat", async (req, res) => {
   const { email } = req.body;
-  const sqlQuery = "SELECT * FROM users WHERE email = ?";
-
-  connection.query(sqlQuery, [email], (err, data, fields) => {
-    if (err) {
-      res.json({ status: "error", message: err });
-      return;
+  try {
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      // Email is already in use
+      return res.json({ status: "repeat" });
+    } else {
+      // Email is not in use
+      return res.json({ status: "ok" });
     }
-    if (data.length != 0) {
-      res.json({ status: "repeat" });
-      return;
-    }
-    else{
-      res.json({status: 'ok'})
-    }
-  });
-});
-
-app.get("/api/fetchRoles",(req,res) =>{
-  const queryString = 'SELECT * FROM roles';
-  connection.query(queryString,(error, results)=>{
-    res.json({ results });
-  })
-})
-
-
-
-app.post("/api/addUsertoRole",(req, res) => {
-  //array
-  const { usersInRole } = req.body;
-
-  if (!Array.isArray(usersInRole)) {
-    return res.status(400).json({ error: `Invalid data format ${usersInRole}` });
+  } catch (error) {
+    console.error("Error checking email repetition:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
-  
-  const existingEmailsQuery = 'SELECT * FROM users';
-  const existingEmailsValues = usersInRole.map(user => user.email);
-  connection.query(existingEmailsQuery,(error, results) =>{
-    if (error) {
-      console.error('Error querying MySQL:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
-    const results2 = results.filter(element => !existingEmailsValues.includes(element.email))
-    
-    res.json({ results2 });
-  })
-})
-
-
-//test method
-app.get("/", (req, res) => {
-  res.send("Data from Backend server");
 });
 
-app.post("/check-post", (req, res) => {
-  res.json({ msg: "Hello" });
+app.get("/api/fetchRoles", verifyToken, async (req, res) => {
+  try {
+    // Use Mongoose to find all roles
+    const roles = await RoleModel.find();
+
+    // Return the roles as JSON
+    res.json({ results: roles });
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/fetchPersonFromRole", verifyToken, async (req, res) => {
+  try {
+    const { role_ID } = req.body;
+    const listPerson = await PersonInRoleModel.find({ role_ID });
+    if (!listPerson) return res.json({});
+
+    const listUserID = listPerson.map((item, index) => item.user_ID);
+
+    const listUsers = await UserModel.find({ _id: { $in: listUserID } });
+
+    return res.json({ users: listUsers });
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json(error);
+  }
+});
+
+app.put("/api/updateRole/:id", verifyToken, async (req, res) => {
+  try {
+    const role_ID = req.params.id;
+    const { role_Name, personToAdd } = req.body;
+
+    //check Role_name ซ้ำ ยังไม่มี
+
+    //Update(เพิ่ม) คนในrole ก่อน (ถ้าลบคนออกอีก Api)
+    //insert PersonInRole (Many Document)
+    const personInRolePromises = personToAdd.map(async (user_ID) => {
+      const newPersonInRole = new PersonInRoleModel({
+        role_ID: role_ID,
+        user_ID: user_ID
+      })
+      return await newPersonInRole.save();
+    })
+
+    // Wait for all inserts to complete
+    await Promise.all(personInRolePromises); 
+    ///////
+    const listPersons = await PersonInRoleModel.find({ role_ID: role_ID });
+    const countNumberPersons = listPersons.length;
+
+
+    //Update number_Of_People
+    const updatedRole = await RoleModel.findOneAndUpdate(
+      { _id: role_ID },
+      { role_Name: role_Name, number_Of_People: countNumberPersons },
+      { new: true }
+    );
+
+    return res.json({ updatedRole });
+  } catch (error) {
+    console.error("Error updating documents:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.post("/api/createRoleAndInsertPerson", verifyToken, async (req, res) => {
+  const { role_Name, personToAdd } = req.body;
+
+  try{
+    //check Role_name ซ้ำ ยังไม่มี
+
+    //insert Role
+    const newRole = new RoleModel({
+      role_Name:role_Name,
+      number_Of_People: personToAdd.length
+    })
+    await newRole.save();
+    
+    //find newRole
+    const newRoleFound = await RoleModel.findOne({role_Name:role_Name})
+    
+    //insert PersonInRole (Many Document)
+    const personInRolePromises = personToAdd.map(async (user_ID) => {
+      const newPersonInRole = new PersonInRoleModel({
+        role_ID: newRoleFound._id,
+        user_ID: user_ID
+      })
+      return await newPersonInRole.save();
+    })
+
+    // Wait for all inserts to complete
+    await Promise.all(personInRolePromises); 
+
+    return res.json({msg:"ok success",role_Name,number : personToAdd.length})
+  }catch(error){
+    console.error("Error create documents:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+
+});
+
+app.post("/api/delUserFromRoleUpdate",verifyToken ,async (req,res) => {
+  try{
+    const { listIdToDel,role_ID } = req.body
+    // Delete documents where role_ID matches and user_ID is in the listIdToDel array
+    const result = await PersonInRoleModel.deleteMany({
+      role_ID: role_ID,
+      user_ID: { $in: listIdToDel },
+    });
+
+    //Update
+    const listPersons = await PersonInRoleModel.find({ role_ID: role_ID });
+    const countNumberPersons = listPersons.length;
+    //Update number_Of_People
+    const updatedRole = await RoleModel.findOneAndUpdate(
+      { _id: role_ID },
+      { number_Of_People: countNumberPersons },
+      { new: true }
+    );
+
+    return res.json({ updatedRole });
+
+  }catch(error){
+    console.error("Error deleting and updating documents:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+})
+
+app.post("/api/fetchUserWithOutRole", verifyToken, async (req, res) => {
+  const { listUserInRoleID } = req.body;
+  const listUsersWithOutRole = await UserModel.find({
+    _id: { $nin: listUserInRoleID },
+  });
+  return res.json({ users: listUsersWithOutRole });
 });
 
 app.listen(port, () => {
   console.log(`Example server listen port ${port}`);
 });
+
+///////////////////////////////////////////////////////////////////////////
+
+// Test
+app.post("/insertPersonToRole", async (req, res) => {
+  try {
+    const { email, role_Name } = req.body;
+    const user = await UserModel.findOne({ email });
+    const role = await RoleModel.findOne({ role_Name });
+
+    if (!user) {
+      return res.json({ status: "error", message: "User not found" });
+    }
+
+    const newPersonInRole = new PersonInRoleModel({
+      role_ID: role.id, // Replace with the actual role ID
+      user_ID: user._id,
+    });
+    await newPersonInRole.save();
+
+    return res.json({
+      status: "ok",
+      message: "User successfully inserted into role",
+    });
+  } catch (error) {
+    console.error("Error inserting person into role:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
+  }
+});
+
+// app.post("/createRoleName", async (req, res) => {
+//   const { role_Name, number_Of_People } = req.body;
+//   try {
+//     const role = await RoleModel.findOne({ role_Name });
+//     console.log(role_Name, number_Of_People);
+//     // const newRole = new RoleModel({
+//     //   role_Name: role_Name,
+//     //   number_Of_People:number_Of_People,
+//     // });
+//     if (role) {
+//       role.number_Of_People = number_Of_People;
+
+//       // Save the updated role back to the database
+//       const updatedRole = await role.save();
+//       console.log('Role updated:', updatedRole);
+//     }
+//     return res.json({
+//       status: "ok",
+//       message: "New user Successfully created!",
+//     });
+//   } catch (err) {
+//     console.error("Error = ", err);
+//     return res.json({ status: "error" });
+//   }
+// });

@@ -31,7 +31,7 @@ const SignIn = () => {
         localStorage.setItem("userData", JSON.stringify(userData));
         alert("เข้าสู่ระบบสำเร็จ");
         //collect to redux state
-        dispatch(logIn(data))
+        // dispatch(logIn(data));
         navigate("/main");
       } else {
         resetTextInput();
@@ -43,33 +43,38 @@ const SignIn = () => {
   };
 
   useEffect(() => {
-    async function autoLogIn() {
-      const userData = JSON.parse(localStorage.getItem("userData"));
-      if (!userData) {
-        localStorage.removeItem("userData");
-        navigate("/");
-        return;
-      }
-      await axios
-        .post(
-          "http://localhost:5000/auth",
-          {},
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + userData.token,
-            },
-          }
-        )
-        .then((response) => response.data)
-        .then((data) => {
-          if (data.status == "ok") {
-            dispatch(logIn(data))
-            navigate("/main");
-          }
-        });
-    }
-    autoLogIn();
+    localStorage.removeItem("userData");
+    navigate("/");
+    return;
+    // ผิดอยู่
+    // async function autoLogIn() {
+    //   const userData = JSON.parse(localStorage.getItem("userData"));
+    //   if (!userData) {
+    //     localStorage.removeItem("userData");
+    //     navigate("/");
+    //     return;
+    //   }
+    //   await axios
+    //     .post(
+    //       "http://localhost:5000/auth",
+    //       {},
+    //       {
+    //         headers: {
+    //           "Content-Type": "application/json",
+    //           Authorization: "Bearer " + userData.token,
+    //         },
+    //       }
+    //     )
+    //     .then((response) => response.data)
+    //     .then((data) => {
+    //       if (data.status == "ok") {
+    //         console.log(data)
+    //         dispatch(logIn(data))
+    //         navigate("/main");
+    //       }
+    //     });
+    // }
+    // autoLogIn();
   }, []);
   return (
     <div>

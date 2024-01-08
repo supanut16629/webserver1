@@ -11,6 +11,7 @@ import { FaBarsProgress } from "react-icons/fa6";
 import { MdAdminPanelSettings } from "react-icons/md";
 import { MdAccountCircle } from "react-icons/md";
 import { RiLogoutBoxRFill } from "react-icons/ri";
+import { IoCheckmarkCircle } from "react-icons/io5";
 import { FaGear } from "react-icons/fa6";
 
 import "../styleCss/SideBarNHeader.css";
@@ -23,12 +24,13 @@ function Sidebar({ children }) {
   const [toggleLogOut, setToggleLogOut] = useState(false);
   const [isOpenSideBar, setIsOpenSideBar] = useState(true);
   const [currentPath, setCurrentPath] = useState("/main");
-  const userData = useSelector((state) => state.account[0]);
+  // const userData = useSelector((state) => state.account);
+  // console.log("global",userData)
   //Ex
   const [userInfo, setUserInfo] = useState({
     firstname: "",
     surname: "",
-    isAdmin: 0,
+    isAdmin: 1,
   });
   ////////////
   const menuItem = [
@@ -48,6 +50,11 @@ function Sidebar({ children }) {
       icon: <FaRegStar />,
     },
     {
+      path: "/main/approval",
+      title: "Approval",
+      icon: <IoCheckmarkCircle />,
+    },
+    {
       path: "/main/progress",
       title: "Progress",
       icon: <FaBarsProgress />,
@@ -64,14 +71,15 @@ function Sidebar({ children }) {
     },
   ];
 
-  const toggleSideBar = () => setIsOpenSideBar(!isOpenSideBar);
+  // const toggleSideBar = () => setIsOpenSideBar(!isOpenSideBar);
+  const toggleSideBar = () => console.log("!isOpenSideBar");
   function toggleBtnLogOut() {
     return setToggleLogOut(!toggleLogOut);
   }
   function handleLogOut() {
     localStorage.removeItem("userData");
     //delete from redux state
-    dispatch(logOut());
+    // dispatch(logOut());
     setUserInfo({ firstname: "", surname: "", isAdmin: 0 });
     navigate("/");
   }
@@ -82,18 +90,8 @@ function Sidebar({ children }) {
 
   //useEffect load redux state
 
-  useEffect(() => {
-    async function fetchUserInfo() {
-      console.log("userData from useSelector :", userData);
-      setUserInfo({
-        firstname: userData.firstname,
-        surname: userData.surname,
-        isAdmin: userData.isAdmin,
-      });
-    }
-    fetchUserInfo();
-    console.log("userInfo from State :", userInfo);
-  }, []);
+
+  
 
   useEffect(() => {
     async function verifyToken() {
@@ -118,6 +116,14 @@ function Sidebar({ children }) {
         .then((data) => {
           if (data.status === "ok") {
             console.log("auth success");
+            console.log("auth ",userData.data);
+            setUserInfo({
+              firstname: userData.data.firstname,
+              surname: userData.data.surname,
+              isAdmin: userData.data.isAdmin,
+            });
+            
+
           } else {
             console.log("auth fail");
             localStorage.removeItem("userData");
@@ -129,10 +135,27 @@ function Sidebar({ children }) {
     verifyToken();
   }, []);
 
+
+  // useEffect(() => {
+  //   async function fetchUserInfo() {
+  //     console.log("userData from useSelector :", userData);
+  //     setUserInfo({
+  //       firstname: userData.firstname,
+  //       surname: userData.surname,
+  //       isAdmin: userData.isAdmin,
+  //     });
+  //   }
+  //   fetchUserInfo();
+  //   console.log("userInfo from State :", userInfo);
+  // }, [userData]);
+
+
+
+
   useEffect(() => {
     console.log(currentPath);
     setCurrentPath(window.location.pathname);
-  }, []);
+  }, [window.location.pathname]);
   return (
     <div>
       <div className="header">
@@ -146,7 +169,7 @@ function Sidebar({ children }) {
           }}
         >
           <div>
-            ชื่อผู้ใช้: {userInfo.firstname} {userInfo.surname}
+            ชื่อผู้ใช้: {userInfo.firstname ?? userInfo.firstname } {userInfo.surname ?? userInfo.surname}
           </div>
         </div>
         <div

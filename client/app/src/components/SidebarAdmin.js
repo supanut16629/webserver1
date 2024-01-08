@@ -25,7 +25,7 @@ function SidebarAdmin({ children }) {
   const [toggleLogOut, setToggleLogOut] = useState(false);
   const [isOpenSideBar, setIsOpenSideBar] = useState(true);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  const userData = useSelector((state) => state.account[0]);
+  // const userData = useSelector((state) => state.account[0]);
 
   const [userInfo, setUserInfo] = useState({
     firstname: "",
@@ -38,11 +38,6 @@ function SidebarAdmin({ children }) {
       path: "/admin/",
       title: "Home",
       icon: <FaIcon.FaHome />,
-    },
-    {
-      path: "/admin/approval",
-      title: "Approval",
-      icon: <IoCheckmarkCircle />,
     },
     {
       path: "/admin/myFlow",
@@ -76,7 +71,8 @@ function SidebarAdmin({ children }) {
     },
   ];
 
-  const toggleSideBar = () => setIsOpenSideBar(!isOpenSideBar);
+  // const toggleSideBar = () => setIsOpenSideBar(!isOpenSideBar);
+  const toggleSideBar = () => console.log("!isOpenSideBar");
   function toggleBtnLogOut() {
     return setToggleLogOut(!toggleLogOut);
   }
@@ -91,16 +87,7 @@ function SidebarAdmin({ children }) {
     setCurrentPath(newPath);
   };
 
-  useEffect(() => {
-    async function fetchUserInfo() {
-      setUserInfo({
-        firstname: userData.firstname,
-        surname: userData.surname,
-        isAdmin: userData.isAdmin,
-      });
-    }
-    fetchUserInfo();
-  }, []);
+  
 
   useEffect(() => {
     async function verifyToken() {
@@ -110,7 +97,7 @@ function SidebarAdmin({ children }) {
         navigate("/");
         return;
       }
-      if (userData.data[0].isAdmin !== 1) {
+      if (userData.data.isAdmin !== 1) {
         navigate("/main");
         return;
       }
@@ -129,6 +116,12 @@ function SidebarAdmin({ children }) {
         .then((data) => {
           if (data.status === "ok") {
             console.log("auth success");
+            console.log("auth ",userData.data);
+            setUserInfo({
+              firstname: userData.data.firstname,
+              surname: userData.data.surname,
+              isAdmin: userData.data.isAdmin,
+            });
           } else {
             console.log("auth fail");
             localStorage.removeItem("userData");
@@ -140,9 +133,20 @@ function SidebarAdmin({ children }) {
     verifyToken();
   }, []);
 
+  // useEffect(() => {
+  //   async function fetchUserInfo() {
+  //     setUserInfo({
+  //       firstname: userData.firstname,
+  //       surname: userData.surname,
+  //       isAdmin: userData.isAdmin,
+  //     });
+  //   }
+  //   fetchUserInfo();
+  // }, []);
+
   useEffect(() => {
     setCurrentPath(window.location.pathname);
-  }, []);
+  }, [window.location.pathname]);
   return (
     <div>
       <div className="headerAdmin">
