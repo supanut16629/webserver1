@@ -9,7 +9,7 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 const port = 5000;
-
+// const uri2 = `mongodb+srv://krit:1234@cluster0.xssmf8n.mongodb.net/document_flow`
 const uri = `mongodb+srv://krit:1234@cluster0.xssmf8n.mongodb.net/document_flow`;
 //connect mongoDB
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -42,6 +42,12 @@ const personInRoleSchema = new mongoose.Schema({
   user_ID: String,
 });
 const PersonInRoleModel = mongoose.model("person_in_roles", personInRoleSchema);
+
+//relationshipGroup
+const relationshipGroupSchema = new mongoose.Schema({
+  relationship_Name: String,
+})
+const RelationshipGroupModel = mongoose.model("relationship_groups",relationshipGroupSchema);
 
 //////
 app.use(cors());
@@ -121,7 +127,7 @@ const verifyToken = (req, res, next) => {
   if (!token) {
     return res
       .status(401)
-      .json({ message: "Access denied. No token provided." });
+      .json({status : "Token error", message: "Access denied. No token provided." });
   }
 
   try {
@@ -131,7 +137,7 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ message: "Invalid token." });
+    res.status(401).json({ status : "Token error", message: "Invalid token." });
   }
 };
 
@@ -305,6 +311,39 @@ app.post("/api/fetchUserWithOutRole", verifyToken, async (req, res) => {
     _id: { $nin: listUserInRoleID },
   });
   return res.json({ users: listUsersWithOutRole });
+});
+
+app.post("/api/createRelationshipGroup", verifyToken,async (req, res) => {
+  const relationship_Name = req.body.nameRelationship;
+  try{
+    const findNameRepeat = await RelationshipGroupModel.find({relationship_Name:relationship_Name})
+    if(findNameRepeat.length !== 0){
+      return res.status(201).json({status:"repeat",check:findNameRepeat})
+    }
+
+    const newRelationship = new RelationshipGroupModel({
+      relationship_Name: relationship_Name,
+    });
+    await newRelationship.save();
+
+    return res.status(201).json({status:"ok" })
+  }catch(error){
+    console.error(error);
+    res.status(500).json({status:"error", message: 'Internal server error' });
+  }
+})
+
+app.get("/api/fetchRelationship", async (req, res) => {
+  try {
+    // Use Mongoose to find all roles
+    const relationshipGroups = await RelationshipGroupModel.find();
+
+    // Return the roles as JSON
+    res.json({ results: relationshipGroups ,status:"ok"});
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({status:"error", error: "Internal Server Error" });
+  }
 });
 
 app.listen(port, () => {

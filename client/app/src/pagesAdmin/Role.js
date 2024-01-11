@@ -184,7 +184,9 @@ const WindowRole = ({
         });
       //set ให้หน้าต่างปิด
       onCloseTabDelete();
-    } catch (error) {}
+    } catch (error) {
+      console.log(error)
+    }
   };
 
 

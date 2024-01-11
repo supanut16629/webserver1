@@ -5,6 +5,51 @@
     height: calc(100vh - 60px);
     flex-direction: column;
 }
+
+.container-create-rela-window{
+    display:flex;
+    width: calc(100vw - 260px);
+    height: calc(100vh - 60px);
+    flex-direction: column;
+    
+}
+
+.frame-create{
+    display:flex;
+    flex-direction: column;
+    width: 800px;
+    height: 500px;
+    border:0.5px solid;
+    border-radius: 5px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.2);
+    margin:auto;
+    padding: 1rem;
+}
+
+.frame-create h1{
+    font-size: 30px;
+    margin: 0;
+}
+
+
+
+.sub-frame-create{
+    margin: 2rem 2rem 0 2rem;
+    /* background-color: #a69ffb; */
+}
+.sub-frame-create p{
+    margin:1rem 0;
+}
+
+.sub-frame-create input{
+    width: 500px;
+    padding: 0.5rem;
+    border-radius: 5px ;
+    border: 0.5px solid;
+    color: #000;
+    margin:0 0 1rem 0;
+}
+
 .frame-btn-create-rela{
     border-bottom: 1px solid;
     display:flex;
@@ -12,6 +57,22 @@
     /* height: 100px; */
     padding: 1em 0 1em 0;
     width: calc(100vw - 260px);
+    
+}
+
+.group-btn{
+    width: 700px;
+    padding: 1rem 0;
+    /* background-color: #a69ffb; */
+    display: flex;
+    justify-content: flex-end;
+}
+
+.group-btn button{
+    font-size: 15px;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    border: 1px solid;
 }
 .frame-btn-create-rela button{
     display:flex;
