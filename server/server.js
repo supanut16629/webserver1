@@ -9,14 +9,15 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 const port = 5000;
-// const uri2 = `mongodb+srv://krit:1234@cluster0.xssmf8n.mongodb.net/document_flow`
-const uri = `mongodb+srv://krit:1234@cluster0.xssmf8n.mongodb.net/document_flow`;
 //connect mongoDB
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+// mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.URI_DATABASE_2214);
 const db = mongoose.connection;
 db.on("connected", () => {
   console.log("Connected to MongoDB");
 });
+
+db.on('error', ()=>{console.log('MongoDB connection error:')});
 //end connect mongoDB
 
 //collection users
@@ -48,6 +49,49 @@ const relationshipGroupSchema = new mongoose.Schema({
   relationship_Name: String,
 })
 const RelationshipGroupModel = mongoose.model("relationship_groups",relationshipGroupSchema);
+
+//relationship_group_step
+const relationshipGroupStepSchema = new mongoose.Schema({
+  step_ID: Number,
+  relationship_ID: String,
+  role1_ID: String,
+  relationship_Type: String,
+  role2_ID:String,
+  fixed_Person_Role2_ID:String,
+})
+
+const RelationshipGroupStepModel = mongoose.model("relationship_group_step",relationshipGroupStepSchema)
+
+
+//flows
+const flowSchema = new mongoose.Schema({
+  flow_Name: String,
+})
+
+const FlowModel = mongoose.model("flows",flowSchema)
+
+//flow-step ////
+
+//initial step
+const flowStepSchema = new mongoose.Schema({
+  flow_ID: String,
+  step_ID: Number,
+  step_Type: String,
+  //init
+  relationship_ID: String,
+  is_Add_Text: String,
+  topic_Add_Text: String,
+  is_Add_Other_File: String,
+  topic_Add_Other_File: String,
+  // approval
+  topic_Send_To_Approve: String,
+  role_Approver_ID: String,
+
+})
+
+const FlowStepModel = mongoose.model("flow_step",flowStepSchema)
+
+
 
 //////
 app.use(cors());
@@ -132,12 +176,10 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    // console.log(decoded)
-    // return res.json(decoded)
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ status : "Token error", message: "Invalid token." });
+    res.status(401).json({ status : "token error", message: "Invalid token." });
   }
 };
 
@@ -148,7 +190,7 @@ app.post("/auth", function (req, res, next) {
         const token = {token}
     */
   const token = authHeader && authHeader.split(" ")[1];
-  if (token == null) return res.sendStatus(401);
+  if (token == null) return res.sendStatus(401).json({status:"token error"});
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
     if (err) return res.json({ status: "error", message: err });
     //data = email ,iat,exp
@@ -324,16 +366,15 @@ app.post("/api/createRelationshipGroup", verifyToken,async (req, res) => {
     const newRelationship = new RelationshipGroupModel({
       relationship_Name: relationship_Name,
     });
-    await newRelationship.save();
-
-    return res.status(201).json({status:"ok" })
+    const savedRelationship = await newRelationship.save();
+    return res.status(201).json({status:"ok",result: savedRelationship})
   }catch(error){
     console.error(error);
     res.status(500).json({status:"error", message: 'Internal server error' });
   }
 })
 
-app.get("/api/fetchRelationship", async (req, res) => {
+app.get("/api/fetchRelationship",verifyToken, async (req, res) => {
   try {
     // Use Mongoose to find all roles
     const relationshipGroups = await RelationshipGroupModel.find();

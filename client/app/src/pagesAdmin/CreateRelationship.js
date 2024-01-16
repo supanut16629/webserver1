@@ -21,11 +21,16 @@ function CreateRelationship() {
 
       console.log(response.data.status)
       const status = response.data.status
+      // const result = response.data.result
+      console.log(response.data)
+      
       //alert เสร็จสิ้น
       //navigate
       if(status === "ok"){
+        const id = response.data.result._id
+        const name = response.data.result.relationship_Name
         alert("สร้าง Relationship สำเร็จ")
-        navigate("/admin/relation")
+        navigate(`/admin/relation/${id}?name=${name}`)
       }
       if(status === "repeat"){
         alert("ชื่อ Relationship ซ้ำกรุณาตั้งชื่อใหม่")
